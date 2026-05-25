@@ -9,7 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { RippleButton } from "@/components/ui/ripple-button";
 
 export default function LoginPage() {
 	return (
@@ -17,8 +17,16 @@ export default function LoginPage() {
 			<Navbar />
 
 			<main className="container mx-auto flex max-w-5xl justify-center px-4 py-10 md:py-16">
-				<MagicCard className="w-full max-w-md rounded-2xl" gradientSize={220}>
-					<Card className="rounded-2xl border-0 bg-transparent ring-0">
+				<MagicCard
+					className="w-full max-w-md rounded-2xl shadow-2xl shadow-zinc-950/10"
+					mode="orb"
+					glowFrom="#c47237"
+					glowTo="#ce8041"
+					glowSize={520}
+					glowBlur={70}
+					glowOpacity={0.95}
+				>
+					<Card className="rounded-2xl border-0 bg-background/95 ring-1 ring-border/60">
 						<CardHeader>
 							<CardTitle>Login</CardTitle>
 							<CardDescription>Sign in to your account.</CardDescription>
@@ -28,9 +36,9 @@ export default function LoginPage() {
 							<LoginForm />
 							<p className="text-center text-sm text-muted-foreground">
 								Don&apos;t have an account?{" "}
-								<Button variant="link" size="sm" asChild className="px-0">
-									<Link href="/signup">Sign up</Link>
-								</Button>
+                                {/* add a underline to the "Login" text and make it a link to the signup page */}
+									<Link href="/signup ">Sign up</Link>
+
 							</p>
 						</CardContent>
 					</Card>

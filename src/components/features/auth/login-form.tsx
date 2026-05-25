@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RippleButton } from "@/components/ui/ripple-button";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -46,13 +46,14 @@ export function LoginForm() {
           className="border-zinc-200 focus-visible:ring-zinc-800"
         />
       </div>
-      <Button 
+      <RippleButton 
         type="submit" 
-        className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium"
+        className="w-full font-medium"
+        rippleColor="#fb923c"
         disabled={loading}
       >
         {loading ? "Signing in..." : "Sign In"}
-      </Button>
+      </RippleButton>
     </form>
   );
 }

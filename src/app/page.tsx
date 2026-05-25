@@ -1,35 +1,47 @@
+import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import { Navbar } from "@/components/layout/navbar";
+import { DropZone } from "@/components/features/declutter/drop-zone";
 
 export default function HomePage() {
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background text-foreground">
+      <div className="pointer-events-none fixed inset-0 z-0 opacity-90">
+        <FlickeringGrid
+          className="h-full w-full"
+          squareSize={6}
+          gridGap={10}
+          flickerChance={0.7}
+          color="rgb(249, 115, 22)"
+          maxOpacity={0.28}
+        />
+      </div>
+
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-gradient-to-b from-background/70 via-background/20 to-background/80" />
+
       {/* Universal Navigation */}
-      <Navbar />
+      <div className="relative z-10">
+        <Navbar />
+      </div>
 
       {/* Hero & Drag-and-Drop Functional Area */}
-      <main className="flex-1 container mx-auto px-4 py-16 md:py-24 max-w-5xl flex flex-col items-center justify-center text-center">
-        
-        {/* Sleek Header Section */}
-        <div className="space-y-4 max-w-3xl mb-12">
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-zinc-900 dark:text-zinc-100">
-            Reclaim Your Storage, <br />
-            <span className="bg-gradient-to-r from-zinc-500 to-zinc-800 bg-clip-text text-transparent">
-              Locally and Securely.
-            </span>
-          </h1>
-          <p className="mx-auto max-w-[700px] text-zinc-500 md:text-xl dark:text-zinc-400 font-normal">
-            Identify massive, old, and completely forgotten  files clogging up your machine. 
-            No files ever touch our servers—everything stays private.
-          </p>
-        </div>
+      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-16 text-center md:py-24">
+        <div className="container mx-auto flex max-w-5xl flex-col items-center justify-center">
+          {/* Sleek Header Section */}
+          <div className="mb-12 max-w-3xl space-y-4">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+              Reclaim Your Storage, <br />
+              <span className="bg-gradient-to-r from-zinc-500 via-zinc-700 to-orange-500 bg-clip-text text-transparent">
+                Locally and Securely.
+              </span>
+            </h1>
+            <p className="mx-auto max-w-[700px] font-normal text-muted-foreground md:text-xl">
+              Identify massive, old, and completely forgotten files clogging up your machine.
+              No files ever touch our servers-everything stays private.
+            </p>
+          </div>
 
-        {/* This is where our feature-specific <DropZone /> component will go next! */}
-        <div className="w-full max-w-2xl border-2 border-dashed border-zinc-200 rounded-xl p-12 bg-zinc-50/50 flex flex-col items-center justify-center min-h-[300px]">
-          <p className="text-sm text-zinc-400">
-            [ Placeholder: Core DropZone Component will load here ]
-          </p>
+          <DropZone />
         </div>
-
       </main>
     </div>
   );
