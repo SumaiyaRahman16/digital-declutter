@@ -16,12 +16,12 @@ export function Navbar() {
         <nav className="flex items-center space-x-4">
           <Link href="/login">
             <Button variant="ghost" size="sm" className="font-medium">
-              Sign In
+              Login
             </Button>
           </Link>
-          <Link href="/login">
-            <Button size="sm" className="font-medium bg-zinc-900 hover:bg-zinc-800 text-white">
-              Get Started
+          <Link href="/signup">
+            <Button variant="default" size="sm" className="font-medium">
+              Sign Up
             </Button>
           </Link>
         </nav>
