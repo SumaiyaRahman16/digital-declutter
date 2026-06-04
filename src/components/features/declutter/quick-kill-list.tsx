@@ -11,6 +11,7 @@ interface FileMetadata {
   size: number;
   type: string;
   lastModified: number;
+  score?: number;
 }
 
 interface QuickKillListProps {
@@ -46,10 +47,35 @@ export function QuickKillList({ files }: QuickKillListProps) {
   // Simple local sorting calculation: Size (in KB) * approximate age factor
   // This mirrors what your Go backend will calculate formally later!
   const sortedFiles = [...files].sort((a, b) => {
-    const scoreA = (a.size / 1024) * (now - a.lastModified);
-    const scoreB = (b.size / 1024) * (now - b.lastModified);
+    const scoreA = typeof a.score === "number" ? a.score : (a.size / 1024) * (now - a.lastModified);
+    const scoreB = typeof b.score === "number" ? b.score : (b.size / 1024) * (now - b.lastModified);
     return scoreB - scoreA;
   });
+
+  const formatScore = (score?: number) => {
+    if (typeof score !== "number" || Number.isNaN(score)) return "--";
+    return `${Math.round(score)}%`;
+  };
+
+  const scoreBadgeClass = (score?: number) => {
+    if (typeof score !== "number" || Number.isNaN(score)) {
+      return "border-zinc-300 bg-zinc-100 text-zinc-600";
+    }
+
+    if (score > 75) {
+      return "border-red-300 bg-red-50 text-red-700";
+    }
+
+    if (score > 50) {
+      return "border-orange-300 bg-orange-50 text-orange-700";
+    }
+
+    if (score > 25) {
+      return "border-amber-300 bg-amber-50 text-amber-700";
+    }
+
+    return "border-emerald-300 bg-emerald-50 text-emerald-700";
+  };
 
   return (
     <div className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300 mt-8 text-left">
@@ -68,6 +94,7 @@ export function QuickKillList({ files }: QuickKillListProps) {
               <TableHead>Path</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Last Modified</TableHead>
+              <TableHead>Clutter Score</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -88,6 +115,14 @@ export function QuickKillList({ files }: QuickKillListProps) {
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {getDaysAgo(file.lastModified)}
+                </TableCell>
+                <TableCell>
+                  <span
+                    className={`inline-flex min-w-[84px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-semibold ${scoreBadgeClass(file.score)}`}
+                    title={typeof file.score === "number" ? `${file.score}` : "Score unavailable"}
+                  >
+                    {formatScore(file.score)}
+                  </span>
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors">

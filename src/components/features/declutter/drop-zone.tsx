@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { FolderUp, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuickKillList } from "./quick-kill-list";
+import { handleExecuteScan } from "@/lib/api-client";
 
 // Define the shape of metadata we will extract
 interface FileMetadata {
@@ -12,19 +13,24 @@ interface FileMetadata {
   size: number; // in Bytes
   type: string;
   lastModified: number; // timestamp
+  score?: number;
 }
 
 export function DropZone() {
   const [isDragActive, setIsDragActive] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [files, setFiles] = useState<FileMetadata[]>([]);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Core Logic: Processing files recursively from a local directory drop/selection
-  const processFiles = (fileList: FileList | null) => {
+  const processFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
 
     setIsScanning(true);
+    setScanError(null);
+    setScanMessage(null);
     const extractedMetadata: FileMetadata[] = [];
 
     // Loop through files and pluck metadata out without reading content
@@ -41,16 +47,51 @@ export function DropZone() {
       });
     }
 
-    // Save the extracted metadata to state (for Quick Kill UI) and log it
-    setFiles(extractedMetadata);
     console.log("Extracted File Metadata Payload:", extractedMetadata);
     console.log(`Total Files Found: ${extractedMetadata.length}`);
 
-    // Simulate backend roundtrip processing calculation delay for UX
-    setTimeout(() => {
+    try {
+      const backendResponse = await handleExecuteScan(extractedMetadata);
+      const responseFiles = Array.isArray(backendResponse)
+        ? backendResponse
+        : typeof backendResponse === "object" && backendResponse && "files" in backendResponse && Array.isArray((backendResponse as { files?: unknown }).files)
+          ? ((backendResponse as { files: unknown[] }).files)
+          : [];
+
+      const byPath = new Map(extractedMetadata.map((file) => [file.path, file]));
+
+      const mergedFiles: FileMetadata[] =
+        responseFiles.length > 0
+          ? responseFiles.map((fileLike) => {
+              const record = fileLike as {
+                name?: string;
+                path?: string;
+                size?: number;
+                last_modified?: string;
+                score?: number;
+              };
+              const source = byPath.get(record.path ?? "");
+              const lastModifiedMs = record.last_modified ? Date.parse(record.last_modified) : Number.NaN;
+
+              return {
+                name: record.name ?? source?.name ?? "",
+                path: record.path ?? source?.path ?? "",
+                size: Number.isFinite(record.size) ? Math.trunc(record.size ?? 0) : source?.size ?? 0,
+                type: source?.type ?? "",
+                lastModified: Number.isFinite(lastModifiedMs) ? lastModifiedMs : source?.lastModified ?? Date.now(),
+                score: Number.isFinite(record.score) ? record.score : undefined,
+              };
+            })
+          : extractedMetadata;
+
+      setFiles(mergedFiles);
+      setScanMessage(`Successfully scanned ${mergedFiles.length} files.`);
+    } catch (error) {
+      setFiles(extractedMetadata);
+      setScanError(error instanceof Error ? error.message : "Unable to scan files.");
+    } finally {
       setIsScanning(false);
-      alert(`Successfully scanned ${extractedMetadata.length} files locally! Check your console layout.`);
-    }, 1500);
+    }
   };
 
   // 2. Drag Event Handlers
@@ -146,6 +187,8 @@ export function DropZone() {
         </div>
       )}
     </div>
+    {scanError ? <p className="mt-4 text-sm text-red-500">{scanError}</p> : null}
+    {scanMessage ? <p className="mt-4 text-sm text-emerald-600">{scanMessage}</p> : null}
     {/* Render quick-kill recommendations below the drop zone */}
     <QuickKillList files={files} />
     </>

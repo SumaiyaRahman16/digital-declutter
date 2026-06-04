@@ -1,0 +1,255 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Navbar } from "@/components/layout/navbar";
+import { Eye, EyeOff, LockKeyhole, Mail, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RippleButton } from "@/components/ui/ripple-button";
+
+type TokenProfile = {
+	email?: string;
+	name?: string;
+	sub?: string;
+	iss?: string;
+	iat?: number;
+	exp?: number;
+};
+
+function parseTokenPayload(token: string): TokenProfile | null {
+	const parts = token.split(".");
+
+	if (parts.length < 2) {
+		return null;
+	}
+
+	try {
+		const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+		const paddedPayload = payload.padEnd(Math.ceil(payload.length / 4) * 4, "=");
+		const decoded = atob(paddedPayload);
+		return JSON.parse(decoded) as TokenProfile;
+	} catch {
+		return null;
+	}
+}
+
+export default function ProfilePage() {
+	const router = useRouter();
+	const [token, setToken] = useState<string | null>(null);
+	const [email, setEmail] = useState<string>("");
+	const [showChangePassword, setShowChangePassword] = useState(false);
+	const [showNewPassword, setShowNewPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+	const [currentPassword, setCurrentPassword] = useState("");
+	const [newPassword, setNewPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+	const [passwordError, setPasswordError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const storedToken = localStorage.getItem("token");
+		const storedEmail = localStorage.getItem("email") ?? "";
+
+		if (!storedToken) {
+			router.replace("/login");
+			return;
+		}
+
+		setToken(storedToken);
+		setEmail(storedEmail);
+	}, [router]);
+
+	const profile = useMemo(() => (token ? parseTokenPayload(token) : null), [token]);
+	const profileEmail = email || profile?.email || profile?.sub || "Not available";
+
+	const handleLogout = () => {
+		localStorage.removeItem("token");
+		localStorage.removeItem("email");
+		window.dispatchEvent(new Event("authchange"));
+		router.push("/login");
+	};
+
+	const handlePasswordSubmit = (event: React.FormEvent) => {
+		event.preventDefault();
+		setPasswordError(null);
+		setPasswordMessage(null);
+
+		if (!currentPassword || !newPassword || !confirmPassword) {
+			setPasswordError("Fill in all password fields.");
+			return;
+		}
+
+		if (newPassword.length < 8) {
+			setPasswordError("New password must be at least 8 characters.");
+			return;
+		}
+
+		if (newPassword !== confirmPassword) {
+			setPasswordError("New password and confirmation do not match.");
+			return;
+		}
+
+		setPasswordMessage("Password change form is ready. Connect this action to your backend endpoint.");
+		setCurrentPassword("");
+		setNewPassword("");
+		setConfirmPassword("");
+	};
+
+	if (!token) {
+		return null;
+	}
+
+	return (
+		<div className="min-h-screen bg-background text-foreground">
+			<Navbar />
+			<main className="container mx-auto flex max-w-4xl justify-center px-4 py-12 md:py-16">
+				<Card className="w-full border-border/60 bg-background/95 shadow-2xl shadow-zinc-950/10">
+					<CardHeader>
+						<div className="mb-2 flex items-center gap-3">
+							<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/20">
+								<UserRound className="h-5 w-5" />
+							</div>
+							<div>
+								<CardTitle>Account</CardTitle>
+								<CardDescription>Manage your email, password, and sign-out session.</CardDescription>
+							</div>
+						</div>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						<section className="grid gap-4 rounded-2xl border border-border/60 bg-muted/20 p-5 md:grid-cols-2">
+							<div className="space-y-1">
+								<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Account email</p>
+								<div className="flex items-center gap-2 text-sm text-foreground">
+									<Mail className="h-4 w-4 text-orange-500" />
+									<span className="break-all font-medium">{profileEmail}</span>
+								</div>
+							</div>
+							<div className="space-y-1 md:text-right">
+								<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Session</p>
+								<div className="flex items-center gap-2 text-sm text-foreground md:justify-end">
+									<ShieldCheck className="h-4 w-4 text-emerald-500" />
+									<span>Active</span>
+								</div>
+							</div>
+						</section>
+
+						<section className="space-y-4 rounded-2xl border border-border/60 p-5">
+							<div className="flex items-center justify-between gap-3">
+								<div>
+									<p className="font-semibold text-foreground">Change password</p>
+									<p className="text-sm text-muted-foreground">Update your account password from here.</p>
+								</div>
+								<RippleButton
+									type="button"
+									onClick={() => setShowChangePassword((current) => !current)}
+									className="min-w-[160px] font-medium"
+									rippleColor="#fb923c"
+								>
+									<span className="inline-flex items-center gap-2">
+										<LockKeyhole className="h-4 w-4" />
+										{showChangePassword ? "Hide form" : "Change password"}
+									</span>
+								</RippleButton>
+							</div>
+
+							{showChangePassword ? (
+								<form onSubmit={handlePasswordSubmit} className="space-y-4 pt-2">
+									<div className="space-y-2">
+										<Label htmlFor="current-password">Current password</Label>
+										<Input
+											id="current-password"
+											type="password"
+											value={currentPassword}
+											onChange={(event) => setCurrentPassword(event.target.value)}
+											placeholder="Enter current password"
+											className="border-zinc-200 focus-visible:ring-zinc-800"
+										/>
+									</div>
+									<div className="grid gap-4 md:grid-cols-2">
+										<div className="space-y-2">
+											<Label htmlFor="new-password">New password</Label>
+											<div className="relative">
+												<Input
+													id="new-password"
+													type={showNewPassword ? "text" : "password"}
+													value={newPassword}
+													onChange={(event) => setNewPassword(event.target.value)}
+													placeholder="Enter new password"
+													className="border-zinc-200 pr-10 focus-visible:ring-zinc-800"
+												/>
+												<button
+													type="button"
+													onClick={() => setShowNewPassword((current) => !current)}
+													aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+													className="absolute inset-y-0 right-2 flex items-center justify-center text-zinc-500 transition-colors hover:text-zinc-800"
+												>
+													{showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+												</button>
+											</div>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="confirm-password">Confirm password</Label>
+											<div className="relative">
+												<Input
+													id="confirm-password"
+													type={showConfirmPassword ? "text" : "password"}
+													value={confirmPassword}
+													onChange={(event) => setConfirmPassword(event.target.value)}
+													placeholder="Confirm new password"
+													className="border-zinc-200 pr-10 focus-visible:ring-zinc-800"
+												/>
+												<button
+													type="button"
+													onClick={() => setShowConfirmPassword((current) => !current)}
+													aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+													className="absolute inset-y-0 right-2 flex items-center justify-center text-zinc-500 transition-colors hover:text-zinc-800"
+												>
+													{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+												</button>
+											</div>
+										</div>
+									</div>
+
+									{passwordError ? <p className="text-sm text-red-500">{passwordError}</p> : null}
+									{passwordMessage ? <p className="text-sm text-emerald-600">{passwordMessage}</p> : null}
+
+									<div className="flex flex-wrap gap-3">
+										<RippleButton type="submit" className="font-medium" rippleColor="#fb923c">
+											Save password
+										</RippleButton>
+										<RippleButton
+											type="button"
+											onClick={() => {
+												setShowChangePassword(false);
+												setPasswordError(null);
+												setPasswordMessage(null);
+												setCurrentPassword("");
+												setNewPassword("");
+												setConfirmPassword("");
+											}}
+											className="font-medium"
+											rippleColor="#fb923c"
+										>
+											Cancel
+										</RippleButton>
+									</div>
+								</form>
+							) : null}
+						</section>
+
+						<div className="flex justify-end">
+							<RippleButton type="button" onClick={handleLogout} className="min-w-[140px] font-medium" rippleColor="#fb923c">
+								<span className="inline-flex items-center gap-2">
+									<LogOut className="h-4 w-4" />
+									Logout
+								</span>
+							</RippleButton>
+						</div>
+					</CardContent>
+				</Card>
+			</main>
+		</div>
+	);
+}

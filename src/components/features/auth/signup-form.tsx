@@ -1,20 +1,30 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RippleButton } from "@/components/ui/ripple-button";
+import { handleSignup } from "@/lib/api-client";
 
 export function SignupForm() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSubmitError(null);
+    setSuccessMessage(null);
+
     // Validate password policy before submitting
     const err = validatePassword(password);
     if (err) {
@@ -23,10 +33,17 @@ export function SignupForm() {
       return;
     }
 
-    // Core submission logic (will link to our useAuth hook later)
-    console.log("Signing up with:", { name, email, password });
+    try {
+      await handleSignup(email, password);
+      setSuccessMessage("Signup complete. You can now log in.");
 
-    setTimeout(() => setLoading(false), 1000); // Temporary loader effect
+      setTimeout(() => {
+        router.push("/login");
+      }, 1400);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to complete signup.");
+      setLoading(false);
+    }
   };
 
   const validatePassword = (pw: string) => {
@@ -65,26 +82,43 @@ export function SignupForm() {
       </div>
       <div className="space-y-1">
         <Label htmlFor="signup-password">Password</Label>
-        <Input
-          id="signup-password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => {
-            const v = e.target.value;
-            setPassword(v);
-            const err = validatePassword(v);
-            setPasswordError(err);
-          }}
-          required
-          className="border-zinc-200 focus-visible:ring-zinc-800"
-        />
+        <div className="relative">
+          <Input
+            id="signup-password"
+            type={showPassword ? "text" : "password"}
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => {
+              const v = e.target.value;
+              setPassword(v);
+              const err = validatePassword(v);
+              setPasswordError(err);
+            }}
+            required
+            className="border-zinc-200 pr-10 focus-visible:ring-zinc-800"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-2 flex items-center justify-center text-zinc-500 transition-colors hover:text-zinc-800"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
         {passwordError ? (
           <p className="text-sm text-red-500 mt-1">{passwordError}</p>
         ) : (
           <p className="text-sm text-muted-foreground mt-1">Password must be 8+ characters and include a special character.</p>
         )}
       </div>
+      {submitError ? (
+        <p className="text-sm text-red-500">{submitError}</p>
+      ) : null}
+      {successMessage ? (
+        <p className="text-sm text-emerald-600">{successMessage}</p>
+      ) : null}
       <RippleButton 
         type="submit" 
         className="w-full font-medium"
