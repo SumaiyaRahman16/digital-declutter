@@ -20,6 +20,22 @@ export type ExecutedScanFile = ScanFilePayload & {
 	[key: string]: unknown;
 };
 
+export interface ScanFile {
+	name: string;
+	path: string;
+	size: number;
+	score: number;
+}
+
+export interface ScanHistoryItem {
+	scan_id: number;
+	folder_path: string;
+	total_files: number;
+	total_size: number;
+	scanned_at: string;
+	files: ScanFile[];
+}
+
 async function parseJsonResponse(response: Response) {
 	const contentType = response.headers.get("content-type") ?? "";
 
@@ -203,5 +219,40 @@ export async function handleExecuteScan(rawFiles: FileLike[]): Promise<ExecutedS
 		}
 
 		throw new Error("Unable to execute scan request");
+	}
+}
+
+export async function fetchScanHistory(): Promise<ScanHistoryItem[]> {
+	try {
+		const token = localStorage.getItem("token");
+
+		if (!token) {
+			throw new Error("Missing authentication token");
+		}
+
+		const response = await fetch(`${API_BASE_URL}/api/history`, {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		const data = await parseJsonResponse(response);
+
+		if (!response.ok) {
+			throw new Error(
+				typeof data === "object" && data && "message" in data
+					? String((data as { message?: string }).message)
+					: `History request failed with status ${response.status}`,
+			);
+		}
+
+		return Array.isArray(data) ? (data as ScanHistoryItem[]) : [];
+	} catch (error) {
+		if (error instanceof Error) {
+			throw error;
+		}
+
+		throw new Error("Unable to fetch scan history");
 	}
 }

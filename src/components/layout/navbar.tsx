@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { HardDriveDownload, LogOut, UserRound } from "lucide-react";
+import { HardDriveDownload, History, LogOut, UserRound } from "lucide-react";
 import { RippleButton } from "@/components/ui/ripple-button";
 
 export function Navbar() {
@@ -45,6 +45,16 @@ export function Navbar() {
         <nav className="flex items-center space-x-3">
           {isAuthenticated ? (
             <>
+              <RippleButton
+                asChild
+                className="h-10 min-w-[132px] px-5 whitespace-nowrap font-medium"
+                rippleColor="linear-gradient(135deg, rgba(17, 24, 39, 0.55), rgba(249, 115, 22, 0.95))"
+              >
+                <Link href="/history" className="inline-flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  History
+                </Link>
+              </RippleButton>
               <RippleButton
                 asChild
                 className="h-10 min-w-[132px] px-5 whitespace-nowrap font-medium"
