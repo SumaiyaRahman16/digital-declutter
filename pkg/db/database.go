@@ -7,16 +7,13 @@ import (
 	"os"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // Registers the pgx driver with database/sql
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 )
 
-// DB acts as our global connection pool manager
 var DB *sql.DB
 
-// ConnectDatabase pulls secrets from .env and sets up the network connection pool
 func ConnectDatabase() {
-	// 1. Attempt to load the .env file from the root folder
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("⚠️ Warning: No .env file found, falling back to system environment variables")
