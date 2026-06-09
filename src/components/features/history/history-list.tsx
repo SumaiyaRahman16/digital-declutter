@@ -5,6 +5,8 @@ import { ChevronDown, ChevronUp, Clock3, DatabaseZap, Loader2 } from "lucide-rea
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchScanHistory, type ScanFile, type ScanHistoryItem } from "@/lib/api-client";
 
+//js functions to format bytes, date, and score display
+
 function formatBytes(bytes: number) {
 	if (!Number.isFinite(bytes) || bytes <= 0) {
 		return "0 Bytes";
@@ -50,6 +52,8 @@ function getFolderName(folderPath: string) {
 }
 
 export function HistoryList() {
+
+    //states and hooks with type script types for history, loading, error, and expanded scan details
 	const [history, setHistory] = useState<ScanHistoryItem[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);

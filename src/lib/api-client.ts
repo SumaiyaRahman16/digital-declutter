@@ -185,11 +185,11 @@ export async function handleExecuteScan(rawFiles: FileLike[]): Promise<ExecutedS
 	try {
 		const token = localStorage.getItem("token");
 
-		if (!token) {
-			const error = new Error("Please log in to scan files.");
-			console.error(error.message);
-			throw error;
-		}
+		// if (!token) {
+		// 	const error = new Error("Please log in to scan files.");
+		// 	console.error(error.message);
+		// 	throw error;
+		// }
 
 		const normalizedFiles = mapFilesToScanPayload(rawFiles);
 
