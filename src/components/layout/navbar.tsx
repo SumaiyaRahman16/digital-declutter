@@ -79,11 +79,26 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <RippleButton asChild className="h-10 w-32 whitespace-nowrap font-medium" rippleColor="linear-gradient(135deg, rgba(17, 24, 39, 0.55), rgba(249, 115, 22, 0.95))">
-                <Link href="/login">Login</Link>
+              {/* Login Button - Matches your working History structure perfectly */}
+              <RippleButton
+                asChild
+                className="h-10 w-32 whitespace-nowrap font-medium"
+                rippleColor="linear-gradient(135deg, rgba(17, 24, 39, 0.55), rgba(249, 115, 22, 0.95))"
+              >
+                <Link href="/login" className="inline-flex items-center justify-center w-full h-full">
+                  Login
+                </Link>
               </RippleButton>
-              <RippleButton asChild className="h-10 w-32 whitespace-nowrap font-medium" rippleColor="linear-gradient(135deg, rgba(17, 24, 39, 0.55), rgba(249, 115, 22, 0.95))">
-                <Link href="/signup">Sign Up</Link>
+
+              {/* Sign Up Button - Matches your working History structure perfectly */}
+              <RippleButton
+                asChild
+                className="h-10 w-32 whitespace-nowrap font-medium"
+                rippleColor="linear-gradient(135deg, rgba(17, 24, 39, 0.55), rgba(249, 115, 22, 0.95))"
+              >
+                <Link href="/signup" className="inline-flex items-center justify-center w-full h-full">
+                  Sign Up
+                </Link>
               </RippleButton>
             </>
           )}
