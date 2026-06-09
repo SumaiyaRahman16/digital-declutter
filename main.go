@@ -7,16 +7,15 @@ import (
 	"digital-declutter-backend/pkg/models"
 
 	"encoding/json"
+	"strings"
 
 	"log"
 	"net/http"
 )
 
-// jsonScanHandler ingests data strings, converts them to variables, scores them, and responds
 func jsonScanHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	// ⚠️ ADD 'Authorization' HERE:
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 	if r.Method == "OPTIONS" {
@@ -36,29 +35,37 @@ func jsonScanHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. Process files via the scoring logic engine
+	// Process files using your logic layer (runs for both guests and logged-in users)
 	processedFiles := logic.ProcessFilesConcurrent(files)
-	// 2. Compute aggregate variables for the parent scan summary record
 
-	// --- 💾 DYNAMIC SAVE OPERATION ---
-	// Extract the real authenticated User ID passed forward by the AuthMiddleware token check
-	userID, ok := r.Context().Value(api.UserIDKey).(int)
-	if !ok {
-		// Fallback safeguard if identity mapping is missing
-		userID = 1
-	}
+	// --- 💾 CONDITIONAL SAVE OPERATION (GUEST VS USER) ---
+	authHeader := r.Header.Get("Authorization")
 
-	var totalSize int64
-	for _, f := range processedFiles {
-		totalSize += f.Size
-	}
+	// Check if a token exists in the header
+	if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	// ✅ Pass the dynamic userID variable instead of mockUserID!
-	err = db.SaveScanResult(userID, len(processedFiles), totalSize, processedFiles)
-	if err != nil {
-		log.Printf("⚠️ Background database persistence warning: %v", err)
+		// Call your existing token validation function from your api package
+		userID, err := api.ValidateToken(tokenString)
+		if err == nil {
+			// Token is valid! Calculate sizes and save to database
+			var totalSize int64
+			for _, f := range processedFiles {
+				totalSize += f.Size
+			}
+
+			err = db.SaveScanResult(userID, len(processedFiles), totalSize, processedFiles)
+			if err != nil {
+				log.Printf("⚠️ Background database persistence warning: %v", err)
+			}
+		} else {
+			log.Printf("⚠️ Invalid token provided, skipping database save (processing as guest): %v", err)
+		}
+	} else {
+		// No token found - explicitly skip database saving
+		log.Println("ℹ️ No authorization token detected. Processing as a temporary guest scan.")
 	}
-	// ------------------------------------------
+	// -----------------------------------------------------
 
 	// 4. Stream data back to the client UI
 	w.Header().Set("Content-Type", "application/json")
@@ -84,8 +91,8 @@ func main() {
 	// Your function attaches a decoder to the incoming network pipe (r.Body).
 
 	// // The decoder converts that raw text stream into real Go variables inside your files slice.
-	// http.HandleFunc("/api/scan", jsonScanHandler)
-	http.HandleFunc("/api/scan", api.AuthMiddleware(jsonScanHandler))
+	http.HandleFunc("/api/scan", jsonScanHandler)
+	// http.HandleFunc("/api/scan", api.AuthMiddleware(jsonScanHandler))
 	// Authentication Entry Points
 	http.HandleFunc("/api/signup", api.PostSignup)
 	http.HandleFunc("/api/login", api.PostLogin)

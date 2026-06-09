@@ -19,14 +19,12 @@ func ConnectDatabase() {
 		log.Println("⚠️ Warning: No .env file found, falling back to system environment variables")
 	}
 
-	// 2. Safely read credentials out of your laptop's environment memory space
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	dbName := os.Getenv("DB_NAME")
 
-	// 3. Construct the clean connection string dynamically
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		user, password, host, port, dbName)
 
@@ -36,7 +34,6 @@ func ConnectDatabase() {
 		log.Fatalf(" Failed to initialize database connection settings: %v", err)
 	}
 
-	// 5. Configure optimal pool properties to handle multiple API hits smoothly
 	DB.SetMaxOpenConns(25)                 // Max active database pipes open at once
 	DB.SetMaxIdleConns(25)                 // Keep up to 25 spare pipes warm in reserve
 	DB.SetConnMaxLifetime(5 * time.Minute) // Cycle old pipes out every 5 mins

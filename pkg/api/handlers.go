@@ -4,6 +4,7 @@ import (
 	"digital-declutter-backend/pkg/db"
 	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -11,7 +12,8 @@ import (
 )
 
 // Define a secret key used to digitally sign our JWT passports (keep this safe!)
-var jwtSecret = []byte("super_secret_declutter_key")
+// We use os.Getenv to read from our .env profile dynamically at runtime
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 type AuthRequest struct {
 	Email    string `json:"email"`

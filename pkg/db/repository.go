@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"golang.org/x/crypto/bcrypt" // Add this package to your imports at the top of repository.go!
+	"golang.org/x/crypto/bcrypt"
 )
 
 // CreateUser takes a raw password, hashes it, and stores the user in the database

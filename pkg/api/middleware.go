@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	// "os"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -75,4 +77,28 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next(w, r.WithContext(ctx))
 	}
+}
+
+// ValidateToken parses a raw JWT token string and returns the embedded userID if valid
+func ValidateToken(tokenString string) (int, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Read the secret from the environment instead of hardcoding it here!
+		return jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		return 0, fmt.Errorf("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, fmt.Errorf("invalid claims")
+	}
+
+	// Assuming your user ID is saved as "userID" or "sub" in claims
+	if floatVal, ok := claims["user_id"].(float64); ok {
+		return int(floatVal), nil
+	}
+
+	return 0, fmt.Errorf("user ID missing from token claims")
 }
