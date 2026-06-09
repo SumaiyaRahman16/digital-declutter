@@ -38,7 +38,6 @@ func jsonScanHandler(w http.ResponseWriter, r *http.Request) {
 	// Process files using your logic layer (runs for both guests and logged-in users)
 	processedFiles := logic.ProcessFilesConcurrent(files)
 
-	// --- 💾 CONDITIONAL SAVE OPERATION (GUEST VS USER) ---
 	authHeader := r.Header.Get("Authorization")
 
 	// Check if a token exists in the header

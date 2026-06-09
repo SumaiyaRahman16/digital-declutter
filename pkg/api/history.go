@@ -6,7 +6,6 @@ import (
 	"net/http"
 )
 
-// GetHistoryHandler extracts the authenticated user ID and streams back their scan history log
 func GetHistoryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")

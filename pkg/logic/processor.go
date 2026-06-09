@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// ProcessFilesConcurrent splits file sets across parallel background threads to calculate scores instantly
 func ProcessFilesConcurrent(files []models.FileMetadata) []models.FileMetadata {
 	totalFiles := len(files)
 	if totalFiles == 0 {

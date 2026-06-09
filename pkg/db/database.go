@@ -28,7 +28,6 @@ func ConnectDatabase() {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		user, password, host, port, dbName)
 
-	// 4. Initialize the background connection pool
 	DB, err = sql.Open("pgx", connStr)
 	if err != nil {
 		log.Fatalf(" Failed to initialize database connection settings: %v", err)

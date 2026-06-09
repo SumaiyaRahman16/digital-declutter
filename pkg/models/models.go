@@ -11,5 +11,5 @@ type FileMetadata struct {
 type User struct {
 	ID           int    `json:"id"`
 	Email        string `json:"email"`
-	PasswordHash string `json:"-"` // The "-" character completely hides this from JSON outputs
+	PasswordHash string `json:"-"`
 }

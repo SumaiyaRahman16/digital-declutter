@@ -9,7 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// CreateUser takes a raw password, hashes it, and stores the user in the database
 func CreateUser(email string, rawPassword string) error {
 	// Hash password with a secure default work factor cost of 10
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(rawPassword), 10)
@@ -22,7 +21,6 @@ func CreateUser(email string, rawPassword string) error {
 	return err
 }
 
-// GetUserByEmail searches the database for a user and returns their struct metadata
 func GetUserByEmail(email string) (*models.User, error) {
 	query := `SELECT id, email, password_hash FROM users WHERE email = $1;`
 
@@ -34,19 +32,16 @@ func GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-// SaveScanResult inserts a parent scan metadata record and all its child files into the DB using an atomic transaction.
 func SaveScanResult(userID int, totalFiles int, totalSize int64, files []models.FileMetadata) error {
 	ctx := context.Background()
 
-	// 1. Begin a database transaction. If ANY single query fails, everything rolls back cleanly.
 	tx, err := DB.BeginTx(ctx, nil)
 	if err != nil {
 		log.Printf("❌ Transaction initialization failed: %v", err)
 		return err
 	}
-	defer tx.Rollback() // Safeguard: Auto-rolls back if execution hits an unhandled error path.
+	defer tx.Rollback()
 
-	// 2. Insert the main Scan event record and retrieve the auto-generated SERIAL ID from Postgres
 	var scanID int
 	scanQuery := `
 		INSERT INTO scans (user_id, total_files, total_size) 
@@ -59,7 +54,6 @@ func SaveScanResult(userID int, totalFiles int, totalSize int64, files []models.
 		return err
 	}
 
-	// 3. Prepare an optimized SQL statement in memory for high-performance looping
 	fileQuery := `
 		INSERT INTO files (scan_id, name, path, size, last_modified, score) 
 		VALUES ($1, $2, $3, $4, $5, $6);`
@@ -71,7 +65,6 @@ func SaveScanResult(userID int, totalFiles int, totalSize int64, files []models.
 	}
 	defer stmt.Close()
 
-	// 4. Loop through the slice and execute an insert for every single file
 	for _, file := range files {
 		_, err = stmt.ExecContext(ctx, scanID, file.Name, file.Path, file.Size, file.LastModified, file.Score)
 		if err != nil {
@@ -80,7 +73,6 @@ func SaveScanResult(userID int, totalFiles int, totalSize int64, files []models.
 		}
 	}
 
-	// 5. Commit all execution steps permanently to disk
 	if err = tx.Commit(); err != nil {
 		log.Printf("❌ Transaction commit failed: %v", err)
 		return err
@@ -90,7 +82,6 @@ func SaveScanResult(userID int, totalFiles int, totalSize int64, files []models.
 	return nil
 }
 
-// GetUserScanHistory fetches all historical scan summary records for a specific user ID
 // GetUserScanHistory retrieves macro scan logs along with their nested file arrays
 func GetUserScanHistory(userID int) ([]map[string]interface{}, error) {
 	// 1. Fetch all parent scans for the user
