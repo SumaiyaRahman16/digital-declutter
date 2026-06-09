@@ -98,6 +98,7 @@ func main() {
 	http.HandleFunc("/api/login", api.PostLogin)
 
 	http.HandleFunc("/api/history", api.AuthMiddleware(api.GetHistoryHandler))
+	http.HandleFunc("/api/password", api.AuthMiddleware(api.PostChangePassword))
 
 	log.Println("🚀 Server is live and listening on http://localhost:8080")
 	// 3. Start the blocking network listener engine

@@ -168,3 +168,27 @@ func GetUserScanHistory(userID int) ([]map[string]interface{}, error) {
 
 	return history, nil
 }
+
+// GetUserByID searches the database for a user by ID and returns their struct metadata
+func GetUserByID(id int) (*models.User, error) {
+	query := `SELECT id, email, password_hash FROM users WHERE id = $1;`
+
+	var user models.User
+	err := DB.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.PasswordHash)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// UpdateUserPassword hashes a new password and updates the user's record in the database
+func UpdateUserPassword(id int, newRawPassword string) error {
+	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(newRawPassword), 10)
+	if err != nil {
+		return err
+	}
+
+	query := `UPDATE users SET password_hash = $1 WHERE id = $2;`
+	_, err = DB.Exec(query, string(hashedBytes), id)
+	return err
+}
