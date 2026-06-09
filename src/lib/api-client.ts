@@ -256,3 +256,40 @@ export async function fetchScanHistory(): Promise<ScanHistoryItem[]> {
 		throw new Error("Unable to fetch scan history");
 	}
 }
+
+export async function handleChangePassword(currentPassword: string, newPassword: string) {
+	try {
+		const token = localStorage.getItem("token");
+
+		if (!token) {
+			throw new Error("Missing authentication token");
+		}
+
+		const response = await fetch(`${API_BASE_URL}/api/password`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+		});
+
+		const data = await parseJsonResponse(response);
+
+		if (!response.ok) {
+			throw new Error(
+				typeof data === "object" && data && "message" in data
+					? String((data as { message?: string }).message)
+					: `Change password request failed with status ${response.status}`,
+			);
+		}
+
+		return data;
+	} catch (error) {
+		if (error instanceof Error) {
+			throw error;
+		}
+
+		throw new Error("Unable to change password");
+	}
+}

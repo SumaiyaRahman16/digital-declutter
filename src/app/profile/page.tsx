@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RippleButton } from "@/components/ui/ripple-button";
+import { handleChangePassword } from "@/lib/api-client";
 
 type TokenProfile = {
 	email?: string;
@@ -71,7 +72,7 @@ export default function ProfilePage() {
 		router.push("/login");
 	};
 
-	const handlePasswordSubmit = (event: React.FormEvent) => {
+	const handlePasswordSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
 		setPasswordError(null);
 		setPasswordMessage(null);
@@ -91,10 +92,19 @@ export default function ProfilePage() {
 			return;
 		}
 
-		setPasswordMessage("Password change form is ready. Connect this action to your backend endpoint.");
-		setCurrentPassword("");
-		setNewPassword("");
-		setConfirmPassword("");
+		try {
+			await handleChangePassword(currentPassword, newPassword);
+			setPasswordMessage("Password successfully updated.");
+			setCurrentPassword("");
+			setNewPassword("");
+			setConfirmPassword("");
+		} catch (error) {
+			if (error instanceof Error) {
+				setPasswordError(error.message);
+			} else {
+				setPasswordError("An unexpected error occurred while changing password.");
+			}
+		}
 	};
 
 	if (!token) {
