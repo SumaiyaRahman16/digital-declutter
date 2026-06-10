@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
-import { Eye, EyeOff, LockKeyhole, Mail, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Mail, LogOut, ShieldCheck, UserRound, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,8 @@ export default function ProfilePage() {
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
 	const [passwordError, setPasswordError] = useState<string | null>(null);
+	const [isExporting, setIsExporting] = useState<boolean>(false);
+	const [exportMessage, setExportMessage] = useState<string>("");
 
 	useEffect(() => {
 		const storedToken = localStorage.getItem("token");
@@ -104,6 +106,51 @@ export default function ProfilePage() {
 			} else {
 				setPasswordError("An unexpected error occurred while changing password.");
 			}
+		}
+	};
+
+	const handleDataExport = async () => {
+		setIsExporting(true);
+		setExportMessage("Exporting your data, please wait...");
+
+		try {
+			const token = localStorage.getItem("token");
+			if (!token) {
+				setExportMessage("Authentication token not found. Please log in again.");
+				setIsExporting(false);
+				return;
+			}
+
+			const response = await fetch("http://localhost:8080/api/export", {
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to export data. Server responded with status: ${response.status}`);
+			}
+
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.setAttribute("download", "digital_declutter_export.json");
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			window.URL.revokeObjectURL(url);
+
+			setExportMessage("Data export completed successfully.");
+		} catch (error) {
+			if (error instanceof Error) {
+				setExportMessage(error.message);
+			} else {
+				setExportMessage("An unexpected error occurred during data export.");
+			}
+		} finally {
+			setIsExporting(false);
 		}
 	};
 
@@ -246,6 +293,41 @@ export default function ProfilePage() {
 										</RippleButton>
 									</div>
 								</form>
+							) : null}
+						</section>
+
+						<section className="space-y-4 rounded-2xl border border-border/60 p-5">
+							<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+								<div>
+									<p className="font-semibold text-foreground">Download my data</p>
+									<p className="text-sm text-muted-foreground">Export your account data and history as a JSON file.</p>
+								</div>
+								<RippleButton
+									type="button"
+									onClick={handleDataExport}
+									disabled={isExporting}
+									className="min-w-[160px] font-medium"
+									rippleColor="#fb923c"
+								>
+									<span className="inline-flex items-center gap-2">
+										<Download className="h-4 w-4" />
+										{isExporting ? "Exporting..." : "Download Data"}
+									</span>
+								</RippleButton>
+							</div>
+							{exportMessage ? (
+								<div className={`mt-4 rounded-xl border p-3 text-sm flex items-center gap-2 ${
+									exportMessage.includes("successfully")
+										? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+										: isExporting
+											? "border-orange-500/20 bg-orange-500/10 text-orange-500 animate-pulse"
+											: "border-red-500/20 bg-red-500/10 text-red-500"
+								}`}>
+									{isExporting && (
+										<span className="h-2 w-2 rounded-full bg-orange-500 animate-ping" />
+									)}
+									<span>{exportMessage}</span>
+								</div>
 							) : null}
 						</section>
 
