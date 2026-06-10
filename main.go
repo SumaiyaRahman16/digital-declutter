@@ -98,6 +98,9 @@ func main() {
 
 	http.HandleFunc("/api/history", api.AuthMiddleware(api.GetHistoryHandler))
 	http.HandleFunc("/api/password", api.AuthMiddleware(api.PostChangePassword))
+	// Add this right next to your other protected routes
+	http.HandleFunc("/api/export", api.AuthMiddleware(api.ExportDataHandler))
+	http.HandleFunc("/api/account/delete", api.AuthMiddleware(api.DeleteAccountHandler))
 
 	log.Println("🚀 Server is live and listening on http://localhost:8080")
 	// 3. Start the blocking network listener engine
