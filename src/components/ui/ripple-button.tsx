@@ -78,7 +78,7 @@ export const RippleButton = React.forwardRef<
         ref={ref}
         {...props}
       >
-        <span className="relative flex w-full items-center justify-center overflow-hidden rounded-[inherit] text-white">
+        <span className="relative flex w-full items-center justify-center overflow-hidden rounded-[inherit] text-inherit">
           <span className="relative z-10">{children}</span>
           <span className="pointer-events-none absolute inset-0">
             {buttonRipples.map((ripple) => (

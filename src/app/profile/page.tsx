@@ -50,6 +50,8 @@ export default function ProfilePage() {
 	const [passwordError, setPasswordError] = useState<string | null>(null);
 	const [isExporting, setIsExporting] = useState<boolean>(false);
 	const [exportMessage, setExportMessage] = useState<string>("");
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+	const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
 	useEffect(() => {
 		const storedToken = localStorage.getItem("token");
@@ -109,7 +111,7 @@ export default function ProfilePage() {
 		}
 	};
 
-	const handleDataExport = async () => {
+	const handleDataExport = async (format: string) => {
 		setIsExporting(true);
 		setExportMessage("Exporting your data, please wait...");
 
@@ -121,7 +123,7 @@ export default function ProfilePage() {
 				return;
 			}
 
-			const response = await fetch("http://localhost:8080/api/export", {
+			const response = await fetch(`http://localhost:8080/api/export?format=${format}`, {
 				method: "GET",
 				headers: {
 					Authorization: `Bearer ${token}`,
@@ -134,12 +136,13 @@ export default function ProfilePage() {
 
 			const blob = await response.blob();
 			const url = window.URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.setAttribute("download", "digital_declutter_export.json");
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
+			const a = document.createElement("a");
+			a.href = url;
+			const extension = format === "csv" ? "csv" : "json";
+			a.download = `digital_declutter_export_${new Date().toISOString().split('T')[0]}.${extension}`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
 			window.URL.revokeObjectURL(url);
 
 			setExportMessage("Data export completed successfully.");
@@ -151,6 +154,30 @@ export default function ProfilePage() {
 			}
 		} finally {
 			setIsExporting(false);
+		}
+	};
+
+	const handleDeleteAccount = async () => {
+		setIsDeleting(true);
+		try {
+			const token = localStorage.getItem("token");
+			const response = await fetch("http://localhost:8080/api/account/delete", {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to delete account.");
+			}
+
+			localStorage.removeItem("token");
+			window.location.href = "/login";
+		} catch (error) {
+			console.error(error);
+			alert("An error occurred while deleting your account. Please try again.");
+			setIsDeleting(false);
 		}
 	};
 
@@ -300,20 +327,34 @@ export default function ProfilePage() {
 							<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 								<div>
 									<p className="font-semibold text-foreground">Download my data</p>
-									<p className="text-sm text-muted-foreground">Export your account data and history as a JSON file.</p>
+									<p className="text-sm text-muted-foreground">Export your account data and history as a JSON or CSV file.</p>
 								</div>
-								<RippleButton
-									type="button"
-									onClick={handleDataExport}
-									disabled={isExporting}
-									className="min-w-[160px] font-medium"
-									rippleColor="#fb923c"
-								>
-									<span className="inline-flex items-center gap-2">
-										<Download className="h-4 w-4" />
-										{isExporting ? "Exporting..." : "Download Data"}
-									</span>
-								</RippleButton>
+								<div className="flex flex-wrap gap-3">
+									<RippleButton
+										type="button"
+										onClick={() => handleDataExport("json")}
+										disabled={isExporting}
+										className="min-w-[130px] font-medium bg-zinc-950 text-white border-zinc-800 hover:bg-zinc-900"
+										rippleColor="#fb923c"
+									>
+										<span className="inline-flex items-center gap-2">
+											<Download className="h-4 w-4" />
+											Export JSON
+										</span>
+									</RippleButton>
+									<RippleButton
+										type="button"
+										onClick={() => handleDataExport("csv")}
+										disabled={isExporting}
+										className="min-w-[130px] font-medium bg-transparent border border-gray-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+										rippleColor="#fb923c"
+									>
+										<span className="inline-flex items-center gap-2">
+											<Download className="h-4 w-4" />
+											Export CSV
+										</span>
+									</RippleButton>
+								</div>
 							</div>
 							{exportMessage ? (
 								<div className={`mt-4 rounded-xl border p-3 text-sm flex items-center gap-2 ${
@@ -329,6 +370,54 @@ export default function ProfilePage() {
 									<span>{exportMessage}</span>
 								</div>
 							) : null}
+						</section>
+
+						<section className="border border-red-200 bg-red-50/40 dark:border-red-900/30 dark:bg-red-950/10 rounded-2xl p-6 space-y-4">
+							<div>
+								<h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Danger Zone</h3>
+								<p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">
+									Account deletion soft-deletes past scan history. This action cannot be undone and will permanently delete your account and all associated data.
+								</p>
+							</div>
+
+							{showDeleteConfirm ? (
+								<div className="space-y-3 rounded-xl border border-red-200/50 bg-red-50/50 dark:border-red-900/20 dark:bg-red-950/5 p-4">
+									<p className="text-sm font-medium text-red-700 dark:text-red-300">
+										Are you sure you want to delete your account? All scan history will be soft-deleted.
+									</p>
+									<div className="flex flex-wrap gap-3">
+										<RippleButton
+											type="button"
+											onClick={handleDeleteAccount}
+											disabled={isDeleting}
+											className="border-red-600 bg-red-600 hover:bg-red-700 text-white font-medium min-w-[140px]"
+											rippleColor="rgba(255, 255, 255, 0.3)"
+										>
+											{isDeleting ? "Deleting..." : "Confirm Delete"}
+										</RippleButton>
+										<RippleButton
+											type="button"
+											onClick={() => setShowDeleteConfirm(false)}
+											disabled={isDeleting}
+											className="border-zinc-200 bg-zinc-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-zinc-100 font-medium"
+											rippleColor="#fb923c"
+										>
+											Cancel
+										</RippleButton>
+									</div>
+								</div>
+							) : (
+								<div>
+									<RippleButton
+										type="button"
+										onClick={() => setShowDeleteConfirm(true)}
+										className="border-red-600 bg-red-600 hover:bg-red-700 text-white font-medium"
+										rippleColor="rgba(255, 255, 255, 0.3)"
+									>
+										Delete Account
+									</RippleButton>
+								</div>
+							)}
 						</section>
 
 						<div className="flex justify-end">
