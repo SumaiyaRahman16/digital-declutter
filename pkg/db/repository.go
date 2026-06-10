@@ -198,12 +198,21 @@ func GetUserExportData(db *sql.DB, userID int) (models.DataExportPayload, error)
 
 	// 2. Query folder name/path, scan date, and total files from scans/files joined
 	// Using DISTINCT ON or MIN/MAX on path guarantees we get one folder path string representing the scan session
+	// query := `
+	// 	SELECT DISTINCT ON (s.id) f.path, s.created_at, s.total_files
+	// 	FROM public.scans s
+	// 	JOIN public.files f ON s.id = f.scan_id
+	// 	WHERE s.user_id = $1 AND s.deleted_at IS NULL AND f.deleted_at IS NULL
+	// 	ORDER BY s.id, s.created_at DESC`
 	query := `
-		SELECT DISTINCT ON (s.id) f.path, s.created_at, s.total_files
-		FROM public.scans s
-		JOIN public.files f ON s.id = f.scan_id
-		WHERE s.user_id = $1 AND s.deleted_at IS NULL AND f.deleted_at IS NULL
-		ORDER BY s.id, s.created_at DESC`
+        SELECT DISTINCT ON (s.id) 
+            split_part(f.path, '/', 1) AS folder_name, 
+            s.created_at, 
+            s.total_files
+        FROM public.scans s
+        JOIN public.files f ON s.id = f.scan_id
+        WHERE s.user_id = $1 AND s.deleted_at IS NULL
+        ORDER BY s.id, s.created_at DESC`
 
 	rows, err := db.Query(query, userID)
 	if err != nil {

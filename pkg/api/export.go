@@ -61,12 +61,21 @@ func ExportDataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var history []InternalRow
 
+	// query := `
+	// 	SELECT DISTINCT ON (s.id) f.path, s.created_at, s.total_files
+	// 	FROM public.scans s
+	// 	JOIN public.files f ON s.id = f.scan_id
+	// 	WHERE s.user_id = $1 AND s.deleted_at IS NULL
+	// 	ORDER BY s.id, s.created_at DESC`
 	query := `
-		SELECT DISTINCT ON (s.id) f.path, s.created_at, s.total_files
-		FROM public.scans s
-		JOIN public.files f ON s.id = f.scan_id
-		WHERE s.user_id = $1 AND s.deleted_at IS NULL
-		ORDER BY s.id, s.created_at DESC`
+        SELECT DISTINCT ON (s.id) 
+            split_part(f.path, '/', 1) AS folder_name, 
+            s.created_at, 
+            s.total_files
+        FROM public.scans s
+        JOIN public.files f ON s.id = f.scan_id
+        WHERE s.user_id = $1 AND s.deleted_at IS NULL
+        ORDER BY s.id, s.created_at DESC`
 
 	rows, err := db.DB.Query(query, userID)
 	if err == nil {
